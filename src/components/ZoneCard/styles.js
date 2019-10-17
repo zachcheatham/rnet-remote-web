@@ -41,5 +41,17 @@ export default (theme) => ({
         right: -10,
         bottom: -10,
         overflow: "hidden"
+    },
+    sourceMenu: {
+        zIndex: 5,
+    },
+    sourceMenuPaper: {
+        backgroundColor: "#172c3d"
+    },
+    selectedSourceIcon: {
+        color: theme.palette.secondary.main,
+    },
+    selectedSourceItem: {
+        color: theme.palette.secondary.main,
     }
 })

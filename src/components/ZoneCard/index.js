@@ -2,11 +2,15 @@ import React, { Component } from "react";
 import { withStyles } from "@material-ui/styles";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
+import ClickAwayListener from "@material-ui/core/ClickAwayListener"
+import Fade from "@material-ui/core/Fade";
 import Grid from "@material-ui/core/Grid";
 import IconButton from "@material-ui/core/IconButton";
 import MenuItem from '@material-ui/core/MenuItem';
-import Menu from '@material-ui/core/Menu';
+import MenuList from '@material-ui/core/MenuList';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
+import Paper from "@material-ui/core/Paper";
+import Popper from "@material-ui/core/Popper";
 import Slider from '@material-ui/core/Slider';
 import Typography from '@material-ui/core/Typography';
 
@@ -17,6 +21,7 @@ import VolumeUpIcon from '@material-ui/icons/VolumeUp';
 import VolumeOffIcon from '@material-ui/icons/VolumeOff';
 
 import styles from "./styles";
+import iconForSource from "../iconForSource";
 
 import RNet from "../../rnet/RNet";
 import Zone from "../../rnet/Zone";
@@ -46,6 +51,7 @@ class ZoneCard extends Component {
             muted: this._zone.getMute(),
             volume: this._zone.getVolume(),
             maxVolume: this._zone.getMaxVolume(),
+            sources: [],
             mediaBackground: this._source && this._source.getMediaArtworkUrl() || null
         })
     }
@@ -61,62 +67,99 @@ class ZoneCard extends Component {
         const classes = this.props.classes;
 
         return (
-            <Card className={classes.card}>
-                <div
-                    style={{backgroundImage: `url('${this.state.power && this.state.mediaBackground}')`}}
-                    className={classes.mediaBackground} />
-                <CardContent className={classes.cardContent}>
-                    <Typography variant="h6">
-                        <center>{this.state.name}</center>
-                    </Typography>
-                    <div className={classes.controls}>
-                        <IconButton
-                            color={this.state.power && "secondary" || "inherit"}
-                            onClick={this._handlePower}
-                            aria-label="zone power">
-                            <PowerSettingsNewIcon/>
-                        </IconButton>
+            <>
+                <Card className={classes.card}>
+                    <div
+                        style={{backgroundImage: `url('${this.state.power && this.state.mediaBackground}')`}}
+                        className={classes.mediaBackground} />
+                    <CardContent className={classes.cardContent}>
+                        <Typography variant="h6">
+                            <center>{this.state.name}</center>
+                        </Typography>
+                        <div className={classes.controls}>
+                            <IconButton
+                                color={this.state.power && "secondary" || "inherit"}
+                                onClick={this._handlePower}
+                                aria-label="zone power">
+                                <PowerSettingsNewIcon/>
+                            </IconButton>
+                            <IconButton
+                                disabled={!this.state.power}
+                                onClick={this._handleSourceSelect}
+                                aria-label="zone source">
+                                <InputIcon/>
+                            </IconButton>
+                            <IconButton aria-label="zone settings">
+                                <TuneIcon/>
+                            </IconButton>
+                        </div>
+                    </CardContent>
+                    <CardContent className={classes.volumeContainer + " " +  classes.cardContent}>
                         <IconButton
                             disabled={!this.state.power}
-                            onClick={this._handleSourceSelect}
-                            aria-label="zone source">
-                            <InputIcon/>
-                        </IconButton>
-                        <IconButton aria-label="zone settings">
-                            <TuneIcon/>
-                        </IconButton>
-                    </div>
-                </CardContent>
-                <CardContent className={classes.volumeContainer + " " +  classes.cardContent}>
-                    <IconButton
-                        disabled={!this.state.power}
-                        onClick={this._handleMute}
-                        aria-label="mute zone">
-                        {this.state.muted &&
-                            <VolumeOffIcon className={classes.muteIcon}/>||
-                            <VolumeUpIcon/>}
+                            onClick={this._handleMute}
+                            aria-label="mute zone">
+                            {this.state.muted &&
+                                <VolumeOffIcon className={classes.muteIcon}/>||
+                                <VolumeUpIcon/>}
 
-                    </IconButton>
-                    <Slider
-                        className={classes.volume}
-                        color="secondary"
-                        valueLabelDisplay="auto"
-                        value={this.state.volume}
-                        min={0}
-                        max={this.state.maxVolume}
-                        disabled={!this.state.power}
-                        onChange={this._handleVolumeChange}
-                        aria-labelledby="zone volume" />
-                </CardContent>
-                <Menu>
-                    <MenuItem>
-                        <ListItemIcon>
-                            <VolumeOffIcon/>
-                        </ListItemIcon>
-                        <Typography variant="inherit">Test Source</Typography>
-                    </MenuItem>
-                </Menu>
-            </Card>
+                        </IconButton>
+                        <Slider
+                            className={classes.volume}
+                            color="secondary"
+                            valueLabelDisplay="auto"
+                            value={this.state.volume}
+                            min={0}
+                            max={this.state.maxVolume}
+                            step={2}
+                            disabled={!this.state.power}
+                            onChange={this._handleVolumeChange}
+                            aria-labelledby="zone volume" />
+                    </CardContent>
+                </Card>
+                <Popper
+                    id="sources-menu"
+                    disablePortal
+                    anchorEl={this.state.sourcesAnchor}
+                    open={Boolean(this.state.sourcesAnchor)}
+                    className={classes.sourceMenu}
+                    placement="bottom"
+                    modifiers={{
+                        arrow: {
+                            enabled: true,
+                            arrowRef: this.state.sourcesAnchor,
+                        }
+                    }}
+                    transition>
+                    {({ TransitionProps }) => (
+                        <Fade {...TransitionProps}>
+                            <Paper
+                                className={classes.sourceMenuPaper}
+                                elevation={8}>
+                                <ClickAwayListener onClickAway={this._handleSourcesClose}>
+                                    <MenuList>
+                                        {this.state.sources.map((id) => {
+                                            const source = this._rNet.getSource(id);
+                                            const selected = this._source && this._source.getId() == id;
+                                            const icon = React.createElement(
+                                                iconForSource(source.getType()),
+                                                {className: selected ? classes.selectedSourceIcon : ""});
+                                            return (
+                                                <MenuItem onClick={() => this._selectSource(id)} key={id} className={selected ? classes.selectedSourceItem : ""}>
+                                                    <ListItemIcon>
+                                                        {icon}
+                                                    </ListItemIcon>
+                                                    <Typography variant="inherit">{source.getName()}</Typography>
+                                                </MenuItem>
+                                            )
+                                        })}
+                                    </MenuList>
+                                </ClickAwayListener>
+                            </Paper>
+                        </Fade>
+                    )}
+                </Popper>
+            </>
         )
     }
 
@@ -125,7 +168,18 @@ class ZoneCard extends Component {
     }
 
     _handleSourceSelect = event => {
-        this.setState({sourcesAnchor: event.currentTarget});
+        let sources = []
+        for (let id in this._rNet._sources)
+            sources.push(id);
+
+        this.setState({
+            sourcesAnchor: event.currentTarget,
+            sources: sources,
+        });
+    }
+
+    _handleSourcesClose = event => {
+        this.setState({sourcesAnchor: null});
     }
 
     _handleMute = event => {
@@ -134,6 +188,11 @@ class ZoneCard extends Component {
 
     _handleVolumeChange = (event, value) => {
         this._zone.setVolume(value);
+    }
+
+    _selectSource(id) {
+        this._handleSourcesClose();
+        this._zone.setSourceId(id);
     }
 
     zoneChanged(zone, remotely, changeType) {
