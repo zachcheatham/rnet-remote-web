@@ -1,3 +1,7 @@
+import PacketC2SZonePower from "./packets/PacketC2SZonePower";
+import PacketC2SZoneSource from "./packets/PacketC2SZoneSource";
+import PacketC2SZoneVolume from "./packets/PacketC2SZoneVolume";
+
 class Zone {
     static CHANGE_TYPE_NAME = 0;
     static CHANGE_TYPE_POWER = 1;
@@ -70,7 +74,8 @@ class Zone {
                 if (listener.zoneChanged)
                     listener.zoneChanged(this, setRemotely, Zone.CHANGE_TYPE_POWER);
 
-            // TODO !setRemotely
+            if (!setRemotely)
+                this._rNet.sendPacket(new PacketC2SZonePower(this._controllerId, this._zoneId, power));
         }
     }
 
@@ -87,6 +92,10 @@ class Zone {
             for (let listener of this._rNet._listeners)
                 if (listener.zoneChanged)
                     listener.zoneChanged(this, setRemotely, Zone.CHANGE_TYPE_VOLUME);
+
+            if (!setRemotely) {
+                this._rNet.sendPacket(new PacketC2SZoneVolume(this._controllerId, this._zoneId, volume));
+            }
         }
     }
 
@@ -135,6 +144,10 @@ class Zone {
             for (let listener of this._rNet._listeners)
                 if (listener.zoneChanged)
                     listener.zoneChanged(this, setRemotely, Zone.CHANGE_TYPE_SOURCE);
+
+            if (!setRemotely) {
+                this._rNet.sendPacket(new PacketC2SZoneSource(this._controllerId, this._zoneId, sourceId));
+            }
         }
     }
 

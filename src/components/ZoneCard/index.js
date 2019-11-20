@@ -44,6 +44,7 @@ class ZoneCard extends Component {
         this._rNet.addListener(this);
         this._zone = this._rNet.getZone(this.props.controllerId, this.props.zoneId);
         this._source = this._rNet.getSource(this._zone.getSourceId());
+        this._blockRemoteVolume = false;
 
         this.setState({
             name: this._zone.getName(),
@@ -113,6 +114,8 @@ class ZoneCard extends Component {
                             max={this.state.maxVolume}
                             step={2}
                             disabled={!this.state.power}
+                            onMouseDown={this._handleVolumeMouseDown}
+                            onMouseUp={this._handleVolumeMouseUp}
                             onChange={this._handleVolumeChange}
                             aria-labelledby="zone volume" />
                     </CardContent>
@@ -169,8 +172,8 @@ class ZoneCard extends Component {
 
     _handleSourceSelect = event => {
         let sources = []
-        for (let id in this._rNet._sources)
-            sources.push(id);
+        for (const [id, source] of Object.entries(this._rNet._sources))
+            sources.push(source.getId());
 
         this.setState({
             sourcesAnchor: event.currentTarget,
@@ -184,6 +187,14 @@ class ZoneCard extends Component {
 
     _handleMute = event => {
         this._zone.setMute(!this._zone.getMute());
+    }
+
+    _handleVolumeMouseUp = () => {
+        this._blockRemoteVolume = true;
+    }
+
+    _handleVolumeMouseUp = () => {
+        this._blockRemoteVolume = false;
     }
 
     _handleVolumeChange = (event, value) => {
@@ -205,7 +216,8 @@ class ZoneCard extends Component {
                     this.setState({power: zone.getPower()});
                     break;
                 case Zone.CHANGE_TYPE_VOLUME:
-                    this.setState({volume: zone.getVolume()});
+                    if (!remotely || !this._blockRemoteVolume)
+                        this.setState({volume: zone.getVolume()});
                     break;
                 case Zone.CHANGE_TYPE_MUTE:
                     this.setState({muted: zone.getMute()});
