@@ -33,12 +33,12 @@ class RNet {
 
     static instance = null;
 
-    static createInstance(host, port) {
-        if (RNet.instance === null) {
-            RNet.instance = new RNet(host, port);
-            return RNet.instance;
-        }
-    }
+    // static createInstance(host, port) {
+    //     if (RNet.instance === null) {
+    //         RNet.instance = new RNet(host, port);
+    //         return RNet.instance;
+    //     }
+    // }
 
     constructor(host, port) {
         this._host = host;
