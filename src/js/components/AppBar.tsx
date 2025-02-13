@@ -1,126 +1,75 @@
-import React  from "react";
+import React, { useState }  from "react";
 
 import {
     Button, IconButton, Menu, MenuItem, AppBar,
-    Toolbar, Typography
+    Toolbar, Typography,
+    styled
 } from "@mui/material";
 
 import {
-    VolumeOff, MoreVert, PowerSettingsNew
+    VolumeOff, MoreVert, PowerSettingsNew, SvgIconComponent
 } from "@mui/icons-material";
 
-import * as styles from "../../style/appbar.scss"
 
 interface RnetAppBarProps {
     serverName: string;
+    connected: boolean;
 }
 
-const RnetAppBar: React.FC<RnetAppBarProps> = ({serverName}) => {
+const AppBarButton = styled(Button)(({theme}) => ({
+    marginLeft: theme.spacing(1),
+    color: theme.palette.text.primary,
+    '> svg': {
+        marginRight: theme.spacing(1)
+    },
+}))
+
+const RnetAppBar: React.FC<RnetAppBarProps> = ({serverName, connected}) => {
+
+    const [ menuAnchor, setMenuAnchor ] = useState(null);
+
     return (
         <AppBar position="relative">
             <Toolbar>
-                    <Typography variant="h6" className={styles.title}>
-                        {serverName}
-                    </Typography>
-                    {/* {this._renderButtons(classes)} */}
-                    {/* <IconButton
-                        aria-controls="main-options-menu"
-                        aria-haspopup="true"
-                        aria-label="more options"
-                        onClick={this._handleMenuClick}
-                    >
-                        <MoreVert />
-                    </IconButton>
-                    <Menu
-                        id="main-options-menu"
-                        anchorEl={this.state.anchorElement}
-                        keepMounted
-                        open={Boolean(this.state.anchorElement)}
-                        onClose={this._handleMenuClose}
-                    >
-                        {this._renderAddZoneOption()}
-                        <MenuItem>Settings</MenuItem>
-                    </Menu> */}
-                </Toolbar>
+                <Typography variant="h6" sx={{flexGrow: 1}}>
+                    {serverName}
+                </Typography>
+                {connected && (
+                    <>
+                        <AppBarButton aria-label="mute all zones">
+                            <VolumeOff/> Mute All Zones
+                        </AppBarButton>
+                        <AppBarButton aria-label="all zones power control">
+                            <PowerSettingsNew /> All On/Off
+                        </AppBarButton>
+                    </>
+                )}
+                <IconButton
+                    aria-controls="main-options-menu"
+                    aria-haspopup="true"
+                    aria-label="more options"
+                    onClick={(e) => setMenuAnchor(e.currentTarget)}
+                >
+                    <MoreVert />
+                </IconButton>
+                <Menu
+                    id="main-options-menu"
+                    anchorEl={menuAnchor}
+                    keepMounted
+                    open={Boolean(menuAnchor)}
+                    onClose={() => setMenuAnchor(null)}
+                >
+                    {connected && (
+                        <>
+                        <MenuItem>Add Zone</MenuItem>
+                        <MenuItem>Change Controller</MenuItem>
+                        </>
+                    )}
+                    <MenuItem>Settings</MenuItem>
+                </Menu>
+            </Toolbar>
         </AppBar>
     );
 };
-
-// class AppBarO extends React.Component {
-
-//     state = {
-//         anchorElement: null
-//     }
-
-//     componentDidMount() {
-//         this._rNet = RNet.instance;
-//     }
-
-//     componentDidUnMount() {
-//         this._rNet = null;
-//     }
-
-//     render() {
-//         const classes = this.props.classes;
-
-//         return (
-//             <MuiAppBar position="relative">
-//                 <Toolbar>
-//                     <Typography variant="h6" className={classes.title}>
-//                         {this.props.serverName}
-//                     </Typography>
-//                     {this._renderButtons(classes)}
-//                     <IconButton
-//                         aria-controls="main-options-menu"
-//                         aria-haspopup="true"
-//                         aria-label="more options"
-//                         onClick={this._handleMenuClick}
-//                     >
-//                         <MoreVertIcon/>
-//                     </IconButton>
-//                     <Menu
-//                         id="main-options-menu"
-//                         anchorEl={this.state.anchorElement}
-//                         keepMounted
-//                         open={Boolean(this.state.anchorElement)}
-//                         onClose={this._handleMenuClose}
-//                     >
-//                         {this._renderAddZoneOption()}
-//                         <MenuItem>Settings</MenuItem>
-//                     </Menu>
-//                 </Toolbar>
-//             </MuiAppBar>
-//         )
-//     }
-
-//     _renderButtons(classes) {
-//         if (this.props.connected) {
-//             return (
-//                 <>
-//                     <Button className={classes.button} aria-label="mute all zones">
-//                         <VolumeOffIcon className={classes.buttonIcon}/> Mute All Zones
-//                     </Button>
-//                     <Button className={classes.button} aria-label="all zones power control">
-//                         <PowerSettingsNewIcon className={classes.buttonIcon}/> All On/Off
-//                     </Button>
-//                 </>
-//             )
-//         }
-//     }
-
-//     _renderAddZoneOption() {
-//         if (this.props.connected) {
-//             return <MenuItem>Add Zone</MenuItem>
-//         }
-//     }
-
-//     _handleMenuClick = event => {
-//         this.setState({anchorElement: event.currentTarget});
-//     }
-
-//     _handleMenuClose = event => {
-//         this.setState({anchorElement: null});
-//     }
-// }
 
 export default RnetAppBar;

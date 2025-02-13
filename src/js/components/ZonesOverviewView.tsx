@@ -1,97 +1,108 @@
-import React from "react";
-
-import {Typography, CircularProgress} from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { styled } from "@mui/system";
+import {Typography, CircularProgress, Box} from "@mui/material";
 
 import AppBar from "./AppBar"
-// import Container from "./Container"
-// import ZoneCard from "./ZoneCard"
+import Container from "./Container";
+import ZoneCard from "./ZoneCard";
 
-// import RNet from "../rnet/RNet"
+import { useRNet } from "../rnet/RNetContext";
+import { Event } from "../rnet/RNet";
 
-const ZonesOverviewView: React.FC = () => {
-    return (
-        <AppBar serverName="Test" />
-    )
+interface ZonesOverviewState {
+    connected: boolean;
+    showConnectionMessage: boolean;
+    serverName: string;
+    zones: number[][];
 }
 
-// class ZonesOverviewViewO extends Component {
-//     state = {
-//         connected: false,
-//         connectionMessage: false,
-//         serverName: "RNet Remote"
-//     }
+const defaultState: ZonesOverviewState = {
+    connected: false,
+    showConnectionMessage: false,
+    serverName: "RNet: Connecting...",
+    zones: []
+}
 
-//     componentDidMount() {
-//         this._rNet = RNet.instance;
-//         this._rNet.addListener(this);
-//     }
+const LoadingHolder = styled('div')({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    textAlign: "center"
+});
 
-//     componentDidUnMount() {
-//         this._rNet.removeListener(this);
-//         this._rNet = undefined;
-//     }
+const ZonesOverview: React.FC = () => {
 
-//     render() {
-//         const classes = this.props.classes;
+    const { rnet } = useRNet();
+    const [ state, setState ] = useState(defaultState);
 
-//         const render = [
-//             (
-//                 <AppBar
-//                     serverName={this.state.serverName}
-//                     connected={this.state.connected} />
-//             )
-//         ]
+    const onRNetUpdate = (event: Event) => {
+        switch (event.type) {
+            case "SERVER_PROPERTY":
+            case "READY":
+            case "INDEX_RECEIVED":
+                setState({...state,
+                    serverName: rnet.getName(),
+                    connected: rnet.isConnected(),
+                    zones: rnet.getZoneIndex()
+                });
+                break;
+            case "DISCONNECTED":
+                setState({...state, connected: false, showConnectionMessage: true});
+        }
+    };
 
-//         if (this.state.connected) {
-//             render.push((
-//                 <Container>
-//                     <div className={classes.cardHolder}>
-//                         {this.state.index.map((index) => {
-//                             return <ZoneCard key={`${index[0]}-${index[1]}`} controllerId={index[0]} zoneId={index[1]} />;
-//                         })}
-//                     </div>
-//                 </Container>
-//             ))
-//         }
-//         else {
-//             render.push((
-//                 <div className={classes.loadingHolder}>
-//                     <div className={classes.loadingBox}>
-//                         <CircularProgress color="secondary"/>
-//                         {this.state.connectionMessage &&
-//                             <Typography
-//                                 className={classes.loadingText}
-//                                 variant="body2">
-//                                 Unable to connect. Retrying...
-//                             </Typography>
-//                         }
-//                     </div>
-//                 </div>
-//             ));
-//         }
+    useEffect(() => {
+        if (rnet) {
+            setState({
+                ...state,
+                connected: rnet.isConnected(),
+                showConnectionMessage: rnet.getZoneIndex() !== null,
+                serverName: rnet.isConnected() ? rnet.getName() : state.serverName,
+            });
+            rnet.subscribe(onRNetUpdate);
+        }
+        else {
+            setState(defaultState);
+        }        
+    }, [rnet]);
 
-//         return render;
-//     }
+    useEffect(() => {
+        
+        return () => {
+            if (rnet) rnet.unsubscribe(onRNetUpdate);
+            setState(defaultState);
+        }
+    }, [])
 
-//     indexReceived() {
-//         this.setState({index: this._rNet.getZoneIndex()});
-//     }
+    return (
+        <>
+        <AppBar serverName={state.serverName} connected={state.connected} />
+        { !state.connected && 
+            <LoadingHolder>
+                <Box sx={{textAlign: "center"}}>
+                    <CircularProgress size={50} color="secondary"/>
+                    {state.showConnectionMessage &&
+                        <Typography sx={{marginTop: 2}}>
+                            Unable to connect. Retrying...
+                        </Typography>
+                    }
+                    
+                </Box>
+            </LoadingHolder>
+        ||
+            <Container maxWidth={false}>
+                <Box sx={{display: "grid", gap: 2,
+                    gridTemplateColumns: "repeat( auto-fit,minmax(250px,1fr) )"
+                }}>
+                    {state.zones.map((index) => {
+                        return <ZoneCard key={`${index[0]}-${index[1]}`} controllerId={index[0]} zoneId={index[1]} />;
+                    })}
+                </Box>
+            </Container>
+        }
+        </>
+    );
+}
 
-//     ready() {
-//         this.setState({connected: true});
-//     }
-
-//     disconnected() {
-//         this.setState({
-//             connected: false,
-//             connectionMessage: true
-//         });
-//     }
-
-//     propertyChanged(propertyId, propertyValue) {
-//         if (propertyId == RNet.PROPERTY_NAME)
-//             this.setState({serverName: propertyValue});
-//     }
-// }
-
-export default ZonesOverviewView;
+export default ZonesOverview;
