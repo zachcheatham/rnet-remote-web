@@ -7,8 +7,10 @@ import {
 } from "@mui/material";
 
 import {
-    VolumeOff, MoreVert, PowerSettingsNew, SvgIconComponent
+    VolumeOff, MoreVert, PowerSettingsNew
 } from "@mui/icons-material";
+import { useAppContext } from "../AppContext";
+import AppSettingsView from "./AppSettingsView";
 
 
 interface RnetAppBarProps {
@@ -27,6 +29,7 @@ const AppBarButton = styled(Button)(({theme}) => ({
 const RnetAppBar: React.FC<RnetAppBarProps> = ({serverName, connected}) => {
 
     const [ menuAnchor, setMenuAnchor ] = useState(null);
+    const { setSplitViewContent } = useAppContext();
 
     return (
         <AppBar position="relative">
@@ -65,7 +68,10 @@ const RnetAppBar: React.FC<RnetAppBarProps> = ({serverName, connected}) => {
                         <MenuItem>Change Controller</MenuItem>
                         </>
                     )}
-                    <MenuItem>Settings</MenuItem>
+                    <MenuItem
+                        onClick={() => {setMenuAnchor(null); setSplitViewContent(<AppSettingsView />)}}>
+                        Settings
+                    </MenuItem>
                 </Menu>
             </Toolbar>
         </AppBar>
