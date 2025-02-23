@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { styled } from "@mui/system";
-import {Typography, CircularProgress, Box} from "@mui/material";
+import {Typography, CircularProgress, Box, Button, Stack} from "@mui/material";
 
 import AppBar from "./AppBar"
 import Container from "./Container";
@@ -8,6 +8,7 @@ import ZoneCard from "./ZoneCard";
 
 import { useRNet } from "../rnet/RNetContext";
 import { Event } from "../rnet/RNet";
+import AddZoneDialog from "./AddZoneDialog";
 
 interface ZonesOverviewState {
     connected: boolean;
@@ -35,6 +36,7 @@ const ZonesOverview: React.FC = () => {
 
     const { rnet } = useRNet();
     const [ state, setState ] = useState(defaultState);
+    const [ addZoneOpen, setAddZoneOpen ] = useState(false);
 
     const onRNetUpdate = (event: Event) => {
         switch (event.type) {
@@ -51,6 +53,13 @@ const ZonesOverview: React.FC = () => {
                 setState({...state, connected: false, showConnectionMessage: true});
         }
     };
+
+    const onAddZone = (controllerId: number, zoneId: number, zoneName: string) => {
+        
+    };
+
+    const openAddZone = () => {setAddZoneOpen(true)}
+    const closeAddZone = () => {setAddZoneOpen(false)}
 
     useEffect(() => {
         if (rnet) {
@@ -78,7 +87,7 @@ const ZonesOverview: React.FC = () => {
     return (
         <>
         <AppBar serverName={state.serverName} connected={state.connected} />
-        { !state.connected && 
+        { !state.connected ?
             <LoadingHolder>
                 <Box sx={{textAlign: "center"}}>
                     <CircularProgress size={50} color="secondary"/>
@@ -90,7 +99,16 @@ const ZonesOverview: React.FC = () => {
                     
                 </Box>
             </LoadingHolder>
-        ||
+        : state.zones.length == 0 ? 
+            <LoadingHolder>
+                <Stack spacing={2}>
+                    <Typography>
+                        No Configured Zones
+                    </Typography>
+                    <Button color="secondary" variant="outlined" onClick={openAddZone}>Add Zone</Button>
+                </Stack>
+            </LoadingHolder>
+        :
             <Container maxWidth={false}>
                 <Box sx={{display: "grid", gap: 2,
                     gridTemplateColumns: "repeat( auto-fit,minmax(250px,1fr) )"
@@ -101,6 +119,7 @@ const ZonesOverview: React.FC = () => {
                 </Box>
             </Container>
         }
+        <AddZoneDialog onCloseCallback={closeAddZone} open={addZoneOpen} addedCallback={onAddZone}  />
         </>
     );
 }
